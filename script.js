@@ -133,10 +133,34 @@ document.querySelector('.search-bar input').addEventListener('input', function (
     </div>`;
   }).join('');
 });
+// Last.fm API
+const API_KEY = '01e7e4efabcb098c79a0cc81c9ff9995';
 
+async function fetchArtwork(track, artist, imgElement) {
+  try {
+    const res = await fetch(`https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}&format=json`);
+    const data = await res.json();
+    const image = data?.track?.album?.image;
+    if (image && image.length) {
+      const url = image[image.length - 1]['#text'];
+      if (url) imgElement.style.backgroundImage = `url(${url})`;
+    }
+  } catch(e) {}
+}
+
+async function loadArtwork() {
+  const thumbs = document.querySelectorAll('.track-thumb');
+  tracks.forEach((t, i) => {
+    if (thumbs[i]) {
+      thumbs[i].textContent = '';
+      fetchArtwork(t.name, t.artist, thumbs[i]);
+    }
+  });
+}
 // Init
 renderTracks();
 updatePlayer();
+loadArtwork();
 
 // Search
 document.querySelector('.search-bar input').addEventListener('input', function () {
