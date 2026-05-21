@@ -127,3 +127,35 @@ function seekTo(e) {
 // Init
 renderTracks();
 updatePlayer();
+
+// Search
+document.querySelector('.search-bar input').addEventListener('input', function () {
+  const query = this.value.toLowerCase();
+  const filtered = tracks.filter(t =>
+    t.name.toLowerCase().includes(query) ||
+    t.artist.toLowerCase().includes(query) ||
+    t.album.toLowerCase().includes(query)
+  );
+  const list = document.getElementById('track-list');
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="padding:20px;color:var(--muted);text-align:center">No results for "${this.value}"</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map((t, i) => {
+    const realIndex = tracks.indexOf(t);
+    return `
+      <div class="track-row ${realIndex === currentTrack ? 'playing' : ''}" onclick="selectTrack(${realIndex})">
+        <div class="track-num">${realIndex === currentTrack && playing
+          ? '<i class="ti ti-volume-2" style="font-size:14px;color:var(--accent)"></i>'
+          : (i + 1)}</div>
+        <div class="track-thumb" style="background:${t.bg}">${t.emoji}</div>
+        <div class="track-info">
+          <div class="track-name">${t.name}</div>
+          <div class="track-artist">${t.artist}</div>
+        </div>
+        <div class="track-dur">${t.dur}</div>
+        <i class="ti ti-heart track-like ${liked.includes(realIndex) ? 'liked' : ''}"
+           onclick="toggleLike(${realIndex}, event)"></i>
+      </div>`;
+  }).join('');
+});
