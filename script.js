@@ -11,44 +11,57 @@ const tracks = [
 let currentTrack = 0;
 let playing = false;
 let liked = [];
+let shuffle = false;
+let repeat = false;
 const audio = new Audio();
+audio.volume = 0.7;
 
-function renderTracks() {
-  const list = document.getElementById('track-list');
-  list.innerHTML = tracks.map((t, i) => `
-    <div class="track-row ${i === currentTrack ? 'playing' : ''}" onclick="selectTrack(${i})">
+// ---- RENDER ----
+function renderTracks(list = tracks, containerId = 'track-list') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = list.map((t, i) => {
+    const realIndex = tracks.indexOf(t);
+    return `
+    <div class="track-row ${realIndex === currentTrack ? 'playing' : ''}" onclick="selectTrack(${realIndex})">
       <div class="track-num">
-        ${i === currentTrack && playing
+        ${realIndex === currentTrack && playing
           ? '<i class="ti ti-volume-2" style="font-size:14px;color:var(--accent)"></i>'
           : (i + 1)}
       </div>
-      <div class="track-thumb" style="background:${t.bg}">${t.emoji}</div>
+      <div class="track-thumb" id="thumb-${realIndex}" style="background:${t.bg}">${t.emoji}</div>
       <div class="track-info">
         <div class="track-name">${t.name}</div>
         <div class="track-artist">${t.artist}</div>
       </div>
       <div class="track-dur">${t.dur}</div>
-      <i class="ti ti-heart track-like ${liked.includes(i) ? 'liked' : ''}"
-         onclick="toggleLike(${i}, event)"></i>
-    </div>
-  `).join('');
+      <i class="ti ti-heart track-like ${liked.includes(realIndex) ? 'liked' : ''}"
+         onclick="toggleLike(${realIndex}, event)"></i>
+    </div>`;
+  }).join('');
+  loadArtwork();
 }
 
 function updatePlayer() {
   const t = tracks[currentTrack];
-  document.getElementById('p-thumb').style.background = t.bg;
-  document.getElementById('p-thumb').textContent = t.emoji;
+  const thumb = document.getElementById('p-thumb');
+  thumb.style.background = t.bg;
+  thumb.style.backgroundImage = '';
+  thumb.textContent = t.emoji;
   document.getElementById('p-name').textContent = t.name;
   document.getElementById('p-artist').textContent = t.artist;
   document.getElementById('p-like').className =
     'ti ti-heart player-like' + (liked.includes(currentTrack) ? ' liked' : '');
+  // fetch player artwork
+  fetchArtwork(t.name, t.artist, thumb);
 }
 
 function updatePlayIcon() {
-  const icon = document.getElementById('play-icon');
-  icon.className = playing ? 'ti ti-player-pause-filled' : 'ti ti-player-play-filled';
+  document.getElementById('play-icon').className =
+    playing ? 'ti ti-player-pause-filled' : 'ti ti-player-play-filled';
 }
 
+// ---- PLAYBACK ----
 function selectTrack(i) {
   currentTrack = i;
   playing = true;
@@ -60,34 +73,60 @@ function selectTrack(i) {
 }
 
 function togglePlay() {
-  if (playing) {
-    audio.pause();
-    playing = false;
-  } else {
-    audio.play();
-    playing = true;
-  }
+  if (playing) { audio.pause(); playing = false; }
+  else { audio.play(); playing = true; }
   updatePlayIcon();
   renderTracks();
 }
 
-function nextTrack() { selectTrack((currentTrack + 1) % tracks.length); }
-function prevTrack() { selectTrack((currentTrack - 1 + tracks.length) % tracks.length); }
+function nextTrack() {
+  if (shuffle) {
+    let r;
+    do { r = Math.floor(Math.random() * tracks.length); } while (r === currentTrack);
+    selectTrack(r);
+  } else {
+    selectTrack((currentTrack + 1) % tracks.length);
+  }
+}
+
+function prevTrack() {
+  if (audio.currentTime > 3) { audio.currentTime = 0; return; }
+  selectTrack((currentTrack - 1 + tracks.length) % tracks.length);
+}
+
+function toggleShuffle() {
+  shuffle = !shuffle;
+  document.getElementById('shuffle-btn').classList.toggle('on', shuffle);
+}
+
+function toggleRepeat() {
+  repeat = !repeat;
+  document.getElementById('repeat-btn').classList.toggle('on', repeat);
+}
 
 function toggleLike(i, e) {
   if (e) e.stopPropagation();
-  liked.includes(i) ? liked.splice(liked.indexOf(i), 1) : liked.push(i);
+  const idx = i < 0 ? currentTrack : i;
+  liked.includes(idx) ? liked.splice(liked.indexOf(idx), 1) : liked.push(idx);
   updatePlayer();
   renderTracks();
+  if (document.getElementById('library-page').style.display !== 'none') renderLibrary();
 }
 
 function seekTo(e) {
   const bar = document.getElementById('prog-bar');
   const pct = Math.min(1, Math.max(0, (e.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth));
-  audio.currentTime = pct * audio.duration;
+  if (audio.duration) audio.currentTime = pct * audio.duration;
 }
 
-// Update progress bar from real audio
+function setVolume(e) {
+  const bar = document.querySelector('.vol-bar');
+  const pct = Math.min(1, Math.max(0, (e.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth));
+  audio.volume = pct;
+  document.getElementById('vol-fill').style.width = (pct * 100) + '%';
+}
+
+// ---- AUDIO EVENTS ----
 audio.addEventListener('timeupdate', () => {
   if (!audio.duration) return;
   const pct = audio.currentTime / audio.duration;
@@ -100,96 +139,94 @@ audio.addEventListener('timeupdate', () => {
   document.getElementById('total').textContent = `${tm}:${ts < 10 ? '0' : ''}${ts}`;
 });
 
-audio.addEventListener('ended', () => nextTrack());
-
-// Search
-document.querySelector('.search-bar input').addEventListener('input', function () {
-  const query = this.value.toLowerCase();
-  const filtered = tracks.filter(t =>
-    t.name.toLowerCase().includes(query) ||
-    t.artist.toLowerCase().includes(query) ||
-    t.album.toLowerCase().includes(query)
-  );
-  const list = document.getElementById('track-list');
-  if (filtered.length === 0) {
-    list.innerHTML = `<div style="padding:20px;color:var(--muted);text-align:center">No results for "${this.value}"</div>`;
-    return;
-  }
-  list.innerHTML = filtered.map((t, i) => {
-    const realIndex = tracks.indexOf(t);
-    return `
-      <div class="track-row ${realIndex === currentTrack ? 'playing' : ''}" onclick="selectTrack(${realIndex})">
-        <div class="track-num">${realIndex === currentTrack && playing
-          ? '<i class="ti ti-volume-2" style="font-size:14px;color:var(--accent)"></i>'
-          : (i + 1)}</div>
-        <div class="track-thumb" style="background:${t.bg}">${t.emoji}</div>
-        <div class="track-info">
-          <div class="track-name">${t.name}</div>
-          <div class="track-artist">${t.artist}</div>
-        </div>
-        <div class="track-dur">${t.dur}</div>
-        <i class="ti ti-heart track-like ${liked.includes(realIndex) ? 'liked' : ''}"
-           onclick="toggleLike(${realIndex}, event)"></i>
-    </div>`;
-  }).join('');
+audio.addEventListener('ended', () => {
+  if (repeat) { audio.currentTime = 0; audio.play(); }
+  else nextTrack();
 });
-// Last.fm API
-const API_KEY = '01e7e4efabcb098c79a0cc81c9ff9995';
 
-async function fetchArtwork(track, artist, imgElement) {
+// ---- ARTWORK ----
+async function fetchArtwork(track, artist, el) {
   try {
-    const res = await fetch(`https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${API_KEY}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}&format=json`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artist + ' ' + track)}&media=music&limit=1`);
     const data = await res.json();
-    const image = data?.track?.album?.image;
-    if (image && image.length) {
-      const url = image[image.length - 1]['#text'];
-      if (url) imgElement.style.backgroundImage = `url(${url})`;
+    if (data.results && data.results.length > 0) {
+      const url = data.results[0].artworkUrl100.replace('100x100', '300x300');
+      el.style.backgroundImage = `url(${url})`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.textContent = '';
     }
   } catch(e) {}
 }
 
-async function loadArtwork() {
-  const thumbs = document.querySelectorAll('.track-thumb');
+function loadArtwork() {
   tracks.forEach((t, i) => {
-    if (thumbs[i]) {
-      thumbs[i].textContent = '';
-      fetchArtwork(t.name, t.artist, thumbs[i]);
-    }
+    const el = document.getElementById(`thumb-${i}`);
+    if (el) fetchArtwork(t.name, t.artist, el);
   });
 }
-// Init
-renderTracks();
-updatePlayer();
-loadArtwork();
 
-// Search
-document.querySelector('.search-bar input').addEventListener('input', function () {
-  const query = this.value.toLowerCase();
+// ---- SEARCH ----
+document.getElementById('search-input').addEventListener('input', function () {
+  const query = this.value.toLowerCase().trim();
+  if (!query) { renderTracks(); return; }
   const filtered = tracks.filter(t =>
     t.name.toLowerCase().includes(query) ||
     t.artist.toLowerCase().includes(query) ||
     t.album.toLowerCase().includes(query)
   );
   const list = document.getElementById('track-list');
+  if (!list) return;
   if (filtered.length === 0) {
-    list.innerHTML = `<div style="padding:20px;color:var(--muted);text-align:center">No results for "${this.value}"</div>`;
+    list.innerHTML = `<div style="padding:40px;color:var(--muted);text-align:center;font-size:14px">No results for "<b>${this.value}</b>"</div>`;
     return;
   }
-  list.innerHTML = filtered.map((t, i) => {
-    const realIndex = tracks.indexOf(t);
-    return `
-      <div class="track-row ${realIndex === currentTrack ? 'playing' : ''}" onclick="selectTrack(${realIndex})">
-        <div class="track-num">${realIndex === currentTrack && playing
-          ? '<i class="ti ti-volume-2" style="font-size:14px;color:var(--accent)"></i>'
-          : (i + 1)}</div>
-        <div class="track-thumb" style="background:${t.bg}">${t.emoji}</div>
-        <div class="track-info">
-          <div class="track-name">${t.name}</div>
-          <div class="track-artist">${t.artist}</div>
-        </div>
-        <div class="track-dur">${t.dur}</div>
-        <i class="ti ti-heart track-like ${liked.includes(realIndex) ? 'liked' : ''}"
-           onclick="toggleLike(${realIndex}, event)"></i>
-      </div>`;
-  }).join('');
+  renderTracks(filtered, 'track-list');
 });
+
+// ---- PAGES ----
+function showPage(page) {
+  const pages = ['home', 'search', 'library', 'charts', 'settings'];
+  pages.forEach(p => {
+    const el = document.getElementById(`${p}-page`);
+    if (el) el.style.display = p === page ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navMap = { home: 0, search: 1, library: 2, charts: 3, settings: 4 };
+  const navItems = document.querySelectorAll('.nav-item');
+  if (navMap[page] !== undefined && navItems[navMap[page]]) {
+    navItems[navMap[page]].classList.add('active');
+  }
+  if (page === 'library') renderLibrary();
+  if (page === 'charts') renderCharts();
+}
+
+// ---- LIBRARY ----
+function renderLibrary() {
+  const list = document.getElementById('liked-list');
+  if (liked.length === 0) {
+    list.innerHTML = `<div style="padding:40px;color:var(--muted);text-align:center;font-size:14px">No liked songs yet.<br>Hit the ♥ on any track!</div>`;
+    return;
+  }
+  renderTracks(liked.map(i => tracks[i]), 'liked-list');
+}
+
+// ---- CHARTS ----
+function renderCharts() {
+  const shuffled = [...tracks].sort(() => Math.random() - 0.5);
+  renderTracks(shuffled, 'charts-list');
+}
+
+// ---- CATEGORY FILTER ----
+function filterCategory(cat) {
+  const results = document.getElementById('search-results');
+  results.innerHTML = `<div class="section-header" style="margin-bottom:12px"><div class="section-title">${cat}</div></div>`;
+  const div = document.createElement('div');
+  div.id = 'cat-results';
+  results.appendChild(div);
+  renderTracks(tracks, 'cat-results');
+}
+
+// ---- INIT ----
+renderTracks();
+updatePlayer();
