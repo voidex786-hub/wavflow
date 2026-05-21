@@ -473,30 +473,31 @@ body {
   .sidebar {
     grid-row: 1;
     grid-column: 1;
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 12px 16px;
+    flex-direction: column;
+    padding: 16px;
     gap: 4px;
     border-right: none;
     border-bottom: 1px solid var(--border);
   }
 
   .logo {
-    width: 100%;
-    margin-bottom: 8px;
-    font-size: 20px;
+    font-size: 22px;
+    margin-bottom: 12px;
   }
 
   .nav-item {
-    padding: 6px 10px;
-    font-size: 12px;
-    gap: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
   }
 
-  .nav-item i { font-size: 15px; }
-  .settings-btn { display: none; }
-  .sidebar-section { display: none; }
-  .playlist-item { display: none; }
+  .settings-btn { margin-top: 8px; }
+
+  .sidebar-section {
+    display: block;
+    padding: 12px 12px 4px;
+  }
+
+  .playlist-item { display: flex; }
 
   .main {
     grid-column: 1;
@@ -533,6 +534,10 @@ body {
     grid-column: 1;
     padding: 0 12px;
     gap: 10px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 
   .player-track { width: auto; flex: 1; }
