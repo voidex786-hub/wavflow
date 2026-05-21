@@ -458,3 +458,57 @@ body {
   border-radius: 2px;
   background: var(--muted);
 }
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60px 1fr 80px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 16px;
+  }
+
+  .featured-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .featured-card { height: 130px; }
+  .featured-card.big { height: 160px; }
+
+  .topbar {
+    margin-bottom: 20px;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+
+  .player {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .player-track {
+    width: auto;
+    flex: 1;
+  }
+
+  .player-center {
+    flex: 2;
+  }
+
+  .player-right {
+    display: none;
+  }
+
+  .vol-row { display: none; }
+}
