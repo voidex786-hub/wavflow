@@ -1,11 +1,11 @@
 const tracks = [
-  { name: "Drift Protocol", artist: "Neon Pulse", album: "Synthetic Horizons", dur: "3:47", emoji: "🌌", bg: "linear-gradient(135deg,#1a1a2e,#533483)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-  { name: "Velvet Nights", artist: "Aria Sol", album: "Midnight Sessions", dur: "4:12", emoji: "🌹", bg: "linear-gradient(135deg,#1a0a2e,#c8375a)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-  { name: "Morning Fog", artist: "The Birch Tones", album: "Forest Signal", dur: "3:28", emoji: "🌲", bg: "linear-gradient(135deg,#0a2a1a,#3ab86a)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-  { name: "Neon Rain", artist: "Callisto", album: "Chrome Dreams", dur: "5:02", emoji: "⚡", bg: "linear-gradient(135deg,#0a0a2e,#3a5bd5)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-  { name: "Golden Hour", artist: "SOLÁ", album: "Warmth", dur: "3:55", emoji: "🌅", bg: "linear-gradient(135deg,#2a1a00,#e09a20)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
-  { name: "Static Bloom", artist: "Moth Theory", album: "Signal Noise", dur: "4:30", emoji: "🦋", bg: "linear-gradient(135deg,#1a002a,#9a40d5)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
-  { name: "Deep Current", artist: "Neon Pulse", album: "Synthetic Horizons", dur: "6:14", emoji: "🌊", bg: "linear-gradient(135deg,#002a2a,#1abcbc)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
+  { name: "Blinding Lights", artist: "The Weeknd", album: "After Hours", dur: "3:20", emoji: "🌌", bg: "linear-gradient(135deg,#1a1a2e,#533483)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+  { name: "Shape of You", artist: "Ed Sheeran", album: "Divide", dur: "3:54", emoji: "🌹", bg: "linear-gradient(135deg,#1a0a2e,#c8375a)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+  { name: "Levitating", artist: "Dua Lipa", album: "Future Nostalgia", dur: "3:23", emoji: "🌲", bg: "linear-gradient(135deg,#0a2a1a,#3ab86a)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+  { name: "Stay", artist: "The Kid LAROI", album: "F*CK LOVE", dur: "2:21", emoji: "⚡", bg: "linear-gradient(135deg,#0a0a2e,#3a5bd5)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+  { name: "Peaches", artist: "Justin Bieber", album: "Justice", dur: "3:18", emoji: "🌅", bg: "linear-gradient(135deg,#2a1a00,#e09a20)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+  { name: "good 4 u", artist: "Olivia Rodrigo", album: "SOUR", dur: "2:58", emoji: "🦋", bg: "linear-gradient(135deg,#1a002a,#9a40d5)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+  { name: "Montero", artist: "Lil Nas X", album: "Montero", dur: "2:17", emoji: "🌊", bg: "linear-gradient(135deg,#002a2a,#1abcbc)", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
 ];
 
 let currentTrack = 0;
