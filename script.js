@@ -16,6 +16,47 @@ let repeat = false;
 const audio = new Audio();
 audio.volume = 0.7;
 
+// ---- SPOTIFY ----
+function msToTime(ms) {
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+async function fetchSpotifyTracks() {
+  const songs = [
+    'Blinding Lights The Weeknd',
+    'Shape of You Ed Sheeran',
+    'Levitating Dua Lipa',
+    'Stay The Kid LAROI',
+    'Peaches Justin Bieber',
+    'good 4 u Olivia Rodrigo',
+    'Montero Lil Nas X'
+  ];
+  try {
+    const results = await Promise.all(songs.map(async (q) => {
+      const res = await fetch(`/api/spotify?q=${encodeURIComponent(q)}&type=track`);
+      const data = await res.json();
+      const track = data?.tracks?.items?.[0];
+      if (!track) return null;
+      return {
+        name: track.name,
+        artist: track.artists[0].name,
+        album: track.album.name,
+        dur: msToTime(track.duration_ms),
+        emoji: '🎵',
+        bg: 'linear-gradient(135deg,#1a1a2e,#533483)',
+        artwork: track.album.images[0]?.url || '',
+        src: track.preview_url || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      };
+    }));
+    return results.filter(Boolean);
+  } catch(e) {
+    console.log('Spotify failed, using defaults');
+    return [];
+  }
+}
+
 // ---- RENDER ----
 function renderTracks(list = tracks, containerId = 'track-list') {
   const container = document.getElementById(containerId);
@@ -29,7 +70,7 @@ function renderTracks(list = tracks, containerId = 'track-list') {
           ? '<i class="ti ti-volume-2" style="font-size:14px;color:var(--accent)"></i>'
           : (i + 1)}
       </div>
-      <div class="track-thumb" id="thumb-${realIndex}" style="background:${t.bg}">${t.emoji}</div>
+      <div class="track-thumb" id="thumb-${realIndex}" style="background:${t.bg};${t.artwork ? `background-image:url(${t.artwork});background-size:cover;background-position:center` : ''}">${t.artwork ? '' : t.emoji}</div>
       <div class="track-info">
         <div class="track-name">${t.name}</div>
         <div class="track-artist">${t.artist}</div>
@@ -39,21 +80,27 @@ function renderTracks(list = tracks, containerId = 'track-list') {
          onclick="toggleLike(${realIndex}, event)"></i>
     </div>`;
   }).join('');
-  loadArtwork();
+  if (!list[0]?.artwork) loadArtwork();
 }
 
 function updatePlayer() {
   const t = tracks[currentTrack];
   const thumb = document.getElementById('p-thumb');
-  thumb.style.background = t.bg;
-  thumb.style.backgroundImage = '';
-  thumb.textContent = t.emoji;
+  if (t.artwork) {
+    thumb.style.backgroundImage = `url(${t.artwork})`;
+    thumb.style.backgroundSize = 'cover';
+    thumb.style.backgroundPosition = 'center';
+    thumb.textContent = '';
+  } else {
+    thumb.style.background = t.bg;
+    thumb.style.backgroundImage = '';
+    thumb.textContent = t.emoji;
+    fetchArtwork(t.name, t.artist, thumb);
+  }
   document.getElementById('p-name').textContent = t.name;
   document.getElementById('p-artist').textContent = t.artist;
   document.getElementById('p-like').className =
     'ti ti-heart player-like' + (liked.includes(currentTrack) ? ' liked' : '');
-  // fetch player artwork
-  fetchArtwork(t.name, t.artist, thumb);
 }
 
 function updatePlayIcon() {
@@ -144,7 +191,7 @@ audio.addEventListener('ended', () => {
   else nextTrack();
 });
 
-// ---- ARTWORK ----
+// ---- ARTWORK (fallback) ----
 async function fetchArtwork(track, artist, el) {
   try {
     const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artist + ' ' + track)}&media=music&limit=1`);
@@ -162,7 +209,7 @@ async function fetchArtwork(track, artist, el) {
 function loadArtwork() {
   tracks.forEach((t, i) => {
     const el = document.getElementById(`thumb-${i}`);
-    if (el) fetchArtwork(t.name, t.artist, el);
+    if (el && !t.artwork) fetchArtwork(t.name, t.artist, el);
   });
 }
 
@@ -227,6 +274,14 @@ function filterCategory(cat) {
   renderTracks(tracks, 'cat-results');
 }
 
-// ---- INIT ----
-renderTracks();
-updatePlayer();
+// Init
+(async () => {
+  const spotifyTracks = await fetchSpotifyTracks();
+  if (spotifyTracks.length > 0) {
+    tracks.length = 0;
+    spotifyTracks.forEach(t => tracks.push(t));
+  }
+  renderTracks();
+  updatePlayer();
+  loadArtwork();
+})();
